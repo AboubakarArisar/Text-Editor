@@ -1,9 +1,9 @@
-import TextEditingArea from "./TextEditingArea.tsx";
 import "./App.css";
+import Router from "./Router/router";
 const App = () => {
   return (
     <div>
-      <TextEditingArea />
+      <Router />
     </div>
   );
 };
