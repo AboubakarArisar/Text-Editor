@@ -1,21 +1,37 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Swal from "sweetalert2";
+
+import axios from "axios";
+import { FormEvent } from "react";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 const Login = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleLogin = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (password.length == 0 || email.length == 0) {
-      Swal.fire({
-        icon: "error",
-        title: "Oops...",
-        text: "Please fill the form",
-      });
-    } else {
+
+    if (!email || !password) {
+      toast.error("please fill in all fields!");
+
+      return;
+    }
+
+    try {
+      const response = await axios.post(
+        "http://localhost:5000/api/users/login",
+        { email, password }
+      );
+
+      const { token } = response.data;
+      localStorage.setItem("token", token);
+
       navigate("/editor");
+    } catch (error) {
+      toast.error("login failed!");
     }
   };
 
