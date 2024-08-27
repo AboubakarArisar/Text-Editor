@@ -1,16 +1,20 @@
+import { useState } from "react";
 import { FaBold } from "react-icons/fa";
 import { GoItalic } from "react-icons/go";
 import { MdFormatUnderlined } from "react-icons/md";
-import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { useState } from "react";
+import Swal from "sweetalert2";
+import Modal from "react-modal";
+
+Modal.setAppElement("#root"); // For accessibility
 
 const CustomEditor = () => {
   const navigate = useNavigate();
   const [link, setLink] = useState("");
   const [documentId, setDocumentId] = useState(""); // State to hold the document ID
   const [content, setContent] = useState(""); // State to hold the document content
+  const [modalIsOpen, setModalIsOpen] = useState(false);
 
   const handleHomeClick = () => {
     Swal.fire({
@@ -40,27 +44,7 @@ const CustomEditor = () => {
     try {
       const response = await axios.post(`/api/documents/${documentId}/share`);
       setLink(response.data.link);
-
-      Swal.fire({
-        title: "Shareable Link",
-        text: "The link to share your document is ready.",
-        input: "text",
-        inputValue: response.data.link,
-        inputAttributes: {
-          readonly: true,
-        },
-        showCancelButton: true,
-        confirmButtonText: "Copy Link",
-        cancelButtonText: "Close",
-        preConfirm: () => {
-          navigator.clipboard.writeText(link);
-          Swal.fire({
-            icon: "success",
-            title: "Link Copied!",
-            text: "The shareable link has been copied to your clipboard.",
-          });
-        },
-      });
+      setModalIsOpen(true); // Open the modal
     } catch (error) {
       console.error("Error sharing document:", error);
       Swal.fire({
@@ -91,6 +75,30 @@ const CustomEditor = () => {
         text: "Failed to save the document.",
       });
     }
+  };
+
+  const closeModal = () => {
+    setModalIsOpen(false);
+  };
+
+  const copyLinkToClipboard = () => {
+    navigator.clipboard
+      .writeText(link)
+      .then(() => {
+        Swal.fire({
+          icon: "success",
+          title: "Link Copied!",
+          text: "The shareable link has been copied to your clipboard.",
+        });
+      })
+      .catch((err) => {
+        console.error("Failed to copy link:", err);
+        Swal.fire({
+          icon: "error",
+          title: "Copy Failed",
+          text: "Failed to copy the link to your clipboard.",
+        });
+      });
   };
 
   return (
@@ -182,6 +190,37 @@ const CustomEditor = () => {
           </div>
         </div>
       </div>
+
+      {/* Modal for sharing the document link */}
+      <Modal
+        isOpen={modalIsOpen}
+        onRequestClose={closeModal}
+        contentLabel='Share Document Link'
+        className='w-[400px] mx-auto my-20 p-4 bg-white rounded shadow-lg'
+        overlayClassName='fixed inset-0 bg-black bg-opacity-50'
+      >
+        <h2 className='text-lg font-semibold mb-4'>Shareable Link</h2>
+        <input
+          type='text'
+          value={link}
+          readOnly
+          className='w-full p-2 border-2 border-gray-300 rounded mb-4'
+        />
+        <div className='flex justify-end gap-2'>
+          <button
+            onClick={copyLinkToClipboard}
+            className='px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700'
+          >
+            Copy Link
+          </button>
+          <button
+            onClick={closeModal}
+            className='px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700'
+          >
+            Close
+          </button>
+        </div>
+      </Modal>
     </>
   );
 };
