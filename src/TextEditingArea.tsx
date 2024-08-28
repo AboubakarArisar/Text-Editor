@@ -9,10 +9,15 @@ import Modal from "react-modal";
 
 Modal.setAppElement("#root"); // For accessibility
 
+const generateRandomId = () => {
+  const min = 1;
+  const max = 1000;
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+};
 const CustomEditor = () => {
   const navigate = useNavigate();
   const [link, setLink] = useState("");
-  const [documentId, setDocumentId] = useState(""); // State to hold the document ID
+  const [documentId, setDocumentId] = useState(generateRandomId().toString()); // State to hold the document ID
   const [content, setContent] = useState(""); // State to hold the document content
   const [modalIsOpen, setModalIsOpen] = useState(false);
 
@@ -26,6 +31,7 @@ const CustomEditor = () => {
       cancelButtonText: "No, stay here",
     }).then((result) => {
       if (result.isConfirmed) {
+        setDocumentId("");
         navigate("/");
       }
     });
@@ -42,11 +48,19 @@ const CustomEditor = () => {
     }
 
     try {
-      const response = await axios.post(`/api/documents/${documentId}/share`);
+      const token = localStorage.getItem("token");
+      const response = await axios.post(
+        `http://localhost:5000/api/documents/document/${documentId}/share`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       setLink(response.data.link);
-      setModalIsOpen(true); // Open the modal
-    } catch (error) {
-      console.error("Error sharing document:", error);
+      setModalIsOpen(true);
+    } catch (error: any) {
+      console.error("Error sharing document:", error?.message);
       Swal.fire({
         icon: "error",
         title: "Oops...",
@@ -57,16 +71,31 @@ const CustomEditor = () => {
 
   const handleSave = async () => {
     try {
+      const token = localStorage.getItem("token");
       const response = await axios.post(
         "http://localhost:5000/api/documents/document",
-        { documentId, content }
+        { documentId, content },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
-      setDocumentId(response.data.id); // Set document ID after creation
-      Swal.fire({
-        icon: "success",
-        title: "Saved!",
-        text: "Document saved successfully.",
-      });
+      if (response.status === 200) {
+        Swal.fire({
+          icon: "warning",
+          title: "Oops...",
+          text: "document already saved",
+        });
+      } else {
+        console.log(response.data.id);
+        console.log("Document saved successfully with id .", documentId);
+        Swal.fire({
+          icon: "success",
+          title: "Saved!",
+          text: "Document saved successfully.",
+        });
+      }
     } catch (error) {
       console.error("Error saving document:", error);
       Swal.fire({
