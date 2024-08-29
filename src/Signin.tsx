@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-
+import { API_URL } from "./config/config";
 import axios from "axios";
 import { FormEvent } from "react";
 import { toast } from "react-toastify";
@@ -10,10 +10,6 @@ const Login = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const baseURL =
-    import.meta.env.NODE_ENV === "production"
-      ? import.meta.env.REACT_APP_PROD_URL
-      : import.meta.env.REACT_APP_DEV_URL;
 
   const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -25,7 +21,8 @@ const Login = () => {
     }
 
     try {
-      const response = await axios.post(`${baseURL}/api/users/login`, {
+      console.log("login : ", API_URL);
+      const response = await axios.post(`${API_URL}/api/users/login`, {
         email,
         password,
       });

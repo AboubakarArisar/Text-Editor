@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
+import { API_URL } from "./config/config";
 
 const SignUp = () => {
   const navigate = useNavigate();
@@ -11,11 +12,6 @@ const SignUp = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  const baseURL =
-    import.meta.env.NODE_ENV === "production"
-      ? import.meta.env.VITE_PROD_URL
-      : import.meta.env.VITE_DEV_URL;
-
   const handleSignUp = async () => {
     if (password !== confirmPassword) {
       toast.error("Passwords do not match!");
@@ -23,7 +19,7 @@ const SignUp = () => {
     }
 
     try {
-      await axios.post(`${baseURL}/api/users/signup`, {
+      await axios.post(`${API_URL}/api/users/signup`, {
         name,
         email,
         password,

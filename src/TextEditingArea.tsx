@@ -3,6 +3,7 @@ import { FaBold } from "react-icons/fa";
 import { GoItalic } from "react-icons/go";
 import { MdFormatUnderlined } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
+import { API_URL } from "./config/config";
 import axios from "axios";
 import Swal from "sweetalert2";
 import Modal from "react-modal";
@@ -20,11 +21,6 @@ const CustomEditor = () => {
   const [documentId, setDocumentId] = useState(generateRandomId().toString()); // State to hold the document ID
   const [content, setContent] = useState(""); // State to hold the document content
   const [modalIsOpen, setModalIsOpen] = useState(false);
-
-  const baseURL =
-    import.meta.env.NODE_ENV === "production"
-      ? import.meta.env.REACT_APP_PROD_URL
-      : import.meta.env.REACT_APP_DEV_URL;
 
   const handleHomeClick = () => {
     Swal.fire({
@@ -55,7 +51,7 @@ const CustomEditor = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.post(
-        `${baseURL}/api/documents/document/${documentId}/share`,
+        `${API_URL}/api/documents/document/${documentId}/share`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -78,7 +74,7 @@ const CustomEditor = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.post(
-        `${baseURL}/api/documents/document`,
+        `${API_URL}/api/documents/document`,
         { documentId, content },
         {
           headers: {
