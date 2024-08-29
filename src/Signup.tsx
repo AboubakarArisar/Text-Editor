@@ -11,6 +11,11 @@ const SignUp = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
+  const baseURL =
+    import.meta.env.NODE_ENV === "production"
+      ? import.meta.env.VITE_PROD_URL
+      : import.meta.env.VITE_DEV_URL;
+
   const handleSignUp = async () => {
     if (password !== confirmPassword) {
       toast.error("Passwords do not match!");
@@ -18,7 +23,7 @@ const SignUp = () => {
     }
 
     try {
-      await axios.post("http://localhost:5000/api/users/signup", {
+      await axios.post(`${baseURL}/api/users/signup`, {
         name,
         email,
         password,
@@ -34,7 +39,7 @@ const SignUp = () => {
   };
 
   return (
-    <div className='flex justify-center items-center h-screen bg-gray-300'>
+    <div className='flex justify-center items-center min-h-screen bg-gray-300'>
       <div className='container mx-auto p-4 w-4/5 md:w-2/5 xl:w-1/3 2xl:w-1/4 bg-white rounded-lg shadow-lg'>
         <h2 className='text-2xl font-bold mb-4 text-center'>Sign Up</h2>
         <form onSubmit={(e) => e.preventDefault()}>
@@ -90,6 +95,15 @@ const SignUp = () => {
             Sign Up
           </button>
         </form>
+        <div className='mt-4 text-center'>
+          <p className='text-gray-700'>Already have an account?</p>
+          <button
+            className='text-blue-500 hover:text-blue-700 font-semibold'
+            onClick={() => navigate("/signin")}
+          >
+            Sign In
+          </button>
+        </div>
         <ToastContainer />
       </div>
     </div>

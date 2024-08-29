@@ -10,6 +10,10 @@ const Login = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const baseURL =
+    import.meta.env.NODE_ENV === "production"
+      ? import.meta.env.REACT_APP_PROD_URL
+      : import.meta.env.REACT_APP_DEV_URL;
 
   const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -21,10 +25,10 @@ const Login = () => {
     }
 
     try {
-      const response = await axios.post(
-        "http://localhost:5000/api/users/login",
-        { email, password }
-      );
+      const response = await axios.post(`${baseURL}/api/users/login`, {
+        email,
+        password,
+      });
 
       const { token } = response.data;
       localStorage.setItem("token", token);

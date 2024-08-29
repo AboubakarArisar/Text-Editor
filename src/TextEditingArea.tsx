@@ -21,6 +21,11 @@ const CustomEditor = () => {
   const [content, setContent] = useState(""); // State to hold the document content
   const [modalIsOpen, setModalIsOpen] = useState(false);
 
+  const baseURL =
+    import.meta.env.NODE_ENV === "production"
+      ? import.meta.env.REACT_APP_PROD_URL
+      : import.meta.env.REACT_APP_DEV_URL;
+
   const handleHomeClick = () => {
     Swal.fire({
       title: "Go to Home?",
@@ -50,7 +55,7 @@ const CustomEditor = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.post(
-        `http://localhost:5000/api/documents/document/${documentId}/share`,
+        `${baseURL}/api/documents/document/${documentId}/share`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -73,7 +78,7 @@ const CustomEditor = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.post(
-        "http://localhost:5000/api/documents/document",
+        `${baseURL}/api/documents/document`,
         { documentId, content },
         {
           headers: {
@@ -167,7 +172,7 @@ const CustomEditor = () => {
               />
             </div>
           </div>
-          <div className='w-full h-1/2 flex justify-between p-4'>
+          <div className='w-full h-1/3 flex justify-between p-4'>
             <div className='flex gap-2'>
               <span className='p-2 rounded bg-gray-300 hover:bg-gray-400 transition duration-150 cursor-pointer'>
                 <FaBold />
