@@ -3,12 +3,12 @@ import { FaBold } from "react-icons/fa";
 import { GoItalic } from "react-icons/go";
 import { MdFormatUnderlined } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
-import { API_URL } from "./config/config";
 import axios from "axios";
 import Swal from "sweetalert2";
 import Modal from "react-modal";
+import { API_URL } from "./config/config";
 
-Modal.setAppElement("#root"); // For accessibility
+Modal.setAppElement("#root");
 
 const generateRandomId = () => {
   const min = 1;
@@ -24,7 +24,10 @@ const CustomEditor = () => {
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [commentModalIsOpen, setCommentModalIsOpen] = useState(false);
   const [comment, setComment] = useState("");
-  const [selection, setSelection] = useState({ start: 0, end: 0 });
+  const [selection, setSelection] = useState<string | null>(null);
+  const [selectionStart, setSelectionStart] = useState<number | null>(null);
+  const [selectionEnd, setSelectionEnd] = useState<number | null>(null);
+  const [saved, setSaved] = useState(false);
 
   const handleHomeClick = () => {
     Swal.fire({
@@ -44,14 +47,16 @@ const CustomEditor = () => {
 
   const handleSave = async () => {
     try {
-      const token = localStorage.getItem("token");
- 
+      const id = documentId;
       const response = await axios.post(
         `${API_URL}/api/documents/document`,
-        { documentId, content },
+        {
+          id,
+          content,
+        },
         {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         }
       );
@@ -62,8 +67,7 @@ const CustomEditor = () => {
           text: "Document already saved",
         });
       } else {
-        console.log(response.data.id);
-        console.log("Document saved successfully with id.", documentId);
+        setSaved(true);
         Swal.fire({
           icon: "success",
           title: "Saved!",
@@ -91,19 +95,19 @@ const CustomEditor = () => {
     }
 
     try {
-      const token = localStorage.getItem("token");
       const response = await axios.post(
         `${API_URL}/api/documents/document/${documentId}/share`,
-        {},
+
         {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         }
       );
       setLink(response.data.link);
       setModalIsOpen(true);
-    } catch (error) {
+    } catch (error: any) {
+      console.log("Error : ", error.response);
       Swal.fire({
         icon: "error",
         title: "Oops...",
@@ -112,19 +116,10 @@ const CustomEditor = () => {
     }
   };
 
-  const handleSelection = () => {
-    const selection = window.getSelection();
-    if (selection && selection.rangeCount > 0) {
-      const range = selection.getRangeAt(0);
-      setSelection({
-        start: range.startOffset,
-        end: range.endOffset,
-      });
-    }
-  };
-
   const handleAddComment = () => {
-    if (selection.start === selection.end) {
+    const selection = window.getSelection();
+
+    if (!selection) {
       Swal.fire({
         icon: "error",
         title: "No Selection",
@@ -144,6 +139,8 @@ const CustomEditor = () => {
           documentId,
           content: comment,
           selection,
+          start: selectionStart,
+          end: selectionEnd,
         },
         {
           headers: {
@@ -152,7 +149,9 @@ const CustomEditor = () => {
         }
       );
       setComment("");
-      setSelection({ start: 0, end: 0 });
+      setSelection(null);
+      setSelectionStart(null);
+      setSelectionEnd(null);
       setCommentModalIsOpen(false);
       Swal.fire({
         icon: "success",
@@ -254,104 +253,107 @@ const CustomEditor = () => {
               </select>
             </div>
             <div className='flex gap-2'>
-              <button
-                onClick={handleSave}
-                className='px-4 py-2 rounded bg-green-600 text-white font-semibold hover:bg-green-700 transition duration-150'
-              >
-                Save
-              </button>
+              {saved ? null : (
+                <button
+                  onClick={handleSave}
+                  className='bg-blue-500 text-white p-2 rounded'
+                >
+                  Save
+                </button>
+              )}
               <button
                 onClick={handleShare}
-                className='px-4 py-2 rounded bg-blue-600 text-white font-semibold hover:bg-blue-700 transition duration-150'
+                className='bg-green-500 text-white p-2 rounded'
               >
                 Share
               </button>
               <button
                 onClick={handleAddComment}
-                className='px-4 py-2 rounded border-2 border-blue-600 text-blue-600 font-semibold hover:bg-blue-100 transition duration-
-150'
+                className='bg-yellow-500 text-white p-2 rounded'
               >
-                Comments
-              </button>
-              <button className='px-4 py-2 rounded border-2 border-gray-300 text-gray-700 font-semibold hover:bg-gray-100 transition duration-150'>
-                Edit
+                Add Comment
               </button>
             </div>
           </div>
         </div>
-        <div className='w-full min-h-screen bg-gray-300 flex justify-center items-center p-6'>
-          <div className='w-[65%] h-screen bg-white p-4 rounded flex flex-col'>
-            <textarea
-              className='w-full h-[90%] p-4 outline-none rounded'
-              placeholder='One word leads to another, write that first word here....'
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              onMouseUp={handleSelection} // Capture selection on mouse release
-            ></textarea>
-          </div>
-        </div>
+        <textarea
+          className='w-full min-h-screen flex-grow p-4 border-t border-gray-300 outline-none'
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          placeholder='Start typing your document here...'
+        ></textarea>
       </div>
-
-      {/* Modal for sharing the document link */}
       <Modal
         isOpen={modalIsOpen}
         onRequestClose={closeModal}
-        contentLabel='Share Document Link'
-        className='w-[400px] mx-auto my-20 p-4 bg-white rounded shadow-lg'
-        overlayClassName='fixed inset-0 bg-black bg-opacity-50'
+        style={{
+          content: {
+            width: "50%",
+            maxWidth: "500px",
+            height: "200px",
+            maxHeight: "200px",
+            margin: "auto",
+            borderRadius: "8px",
+            padding: "20px",
+            boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
+          },
+        }}
       >
         <h2 className='text-lg font-semibold mb-4'>Shareable Link</h2>
         <input
           type='text'
-          value={link}
           readOnly
-          className='w-full p-2 border-2 border-gray-300 rounded mb-4'
+          value={link}
+          className='w-full p-2 border rounded mb-4'
         />
-        <div className='flex justify-end gap-2'>
-          <button
-            onClick={copyLinkToClipboard}
-            className='px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700'
-          >
-            Copy Link
-          </button>
-          <button
-            onClick={closeModal}
-            className='px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700'
-          >
-            Close
-          </button>
-        </div>
+        <button
+          onClick={copyLinkToClipboard}
+          className='bg-green-500 text-white p-2 rounded mr-2'
+        >
+          Copy Link
+        </button>
+        <button
+          onClick={closeModal}
+          className='bg-red-500 text-white p-2 rounded'
+        >
+          Close
+        </button>
       </Modal>
-
-      {/* Modal for adding comments */}
       <Modal
         isOpen={commentModalIsOpen}
         onRequestClose={closeCommentModal}
-        contentLabel='Add Comment'
-        className='w-[400px] mx-auto my-20 p-4 bg-white rounded shadow-lg'
-        overlayClassName='fixed inset-0 bg-black bg-opacity-50'
+        style={{
+          content: {
+            width: "50%",
+            maxWidth: "500px",
+            height: "300px",
+            maxHeight: "300px",
+            margin: "auto",
+            borderRadius: "8px",
+            padding: "20px",
+            boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
+          },
+        }}
       >
         <h2 className='text-lg font-semibold mb-4'>Add Comment</h2>
         <textarea
-          className='w-full p-2 border-2 border-gray-300 rounded mb-4'
-          placeholder='Write your comment here...'
+          className='w-full p-2 border rounded mb-4'
           value={comment}
           onChange={(e) => setComment(e.target.value)}
-        />
-        <div className='flex justify-end gap-2'>
-          <button
-            onClick={handleSaveComment}
-            className='px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700'
-          >
-            Save Comment
-          </button>
-          <button
-            onClick={closeCommentModal}
-            className='px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700'
-          >
-            Close
-          </button>
-        </div>
+          placeholder='Write your comment here...'
+        ></textarea>
+        <button
+          onClick={handleSaveComment}
+          className='bg-blue-500 text-white p-2 rounded mr-2'
+        >
+          Save Comment
+        </button>
+        <button
+          onClick={closeCommentModal}
+          className='bg-red-500 text-white p-2 rounded'
+        >
+          Close
+        </button>
       </Modal>
     </>
   );
