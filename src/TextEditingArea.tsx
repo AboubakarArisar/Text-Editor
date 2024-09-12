@@ -15,12 +15,16 @@ const generateRandomId = () => {
   const max = 1000;
   return Math.floor(Math.random() * (max - min + 1)) + min;
 };
+
 const CustomEditor = () => {
   const navigate = useNavigate();
   const [link, setLink] = useState("");
-  const [documentId, setDocumentId] = useState(generateRandomId().toString()); // State to hold the document ID
-  const [content, setContent] = useState(""); // State to hold the document content
+  const [documentId, setDocumentId] = useState(generateRandomId().toString());
+  const [content, setContent] = useState("");
   const [modalIsOpen, setModalIsOpen] = useState(false);
+  const [commentModalIsOpen, setCommentModalIsOpen] = useState(false);
+  const [comment, setComment] = useState("");
+  const [selection, setSelection] = useState({ start: 0, end: 0 });
 
   const handleHomeClick = () => {
     Swal.fire({
@@ -38,41 +42,10 @@ const CustomEditor = () => {
     });
   };
 
-  const handleShare = async () => {
-    if (!documentId) {
-      Swal.fire({
-        icon: "error",
-        title: "No Document ID",
-        text: "Please save the document first.",
-      });
-      return;
-    }
-
-    try {
-      const token = localStorage.getItem("token");
-      const response = await axios.post(
-        `${API_URL}/api/documents/document/${documentId}/share`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      setLink(response.data.link);
-      setModalIsOpen(true);
-    } catch (error: any) {
-      console.error("Error sharing document:", error?.message);
-      Swal.fire({
-        icon: "error",
-        title: "Oops...",
-        text: "Failed to share the document.",
-      });
-    }
-  };
-
   const handleSave = async () => {
     try {
       const token = localStorage.getItem("token");
+ 
       const response = await axios.post(
         `${API_URL}/api/documents/document`,
         { documentId, content },
@@ -82,15 +55,15 @@ const CustomEditor = () => {
           },
         }
       );
-      if (response.status === 200) {
+      if (response.status === 199) {
         Swal.fire({
           icon: "warning",
           title: "Oops...",
-          text: "document already saved",
+          text: "Document already saved",
         });
       } else {
         console.log(response.data.id);
-        console.log("Document saved successfully with id .", documentId);
+        console.log("Document saved successfully with id.", documentId);
         Swal.fire({
           icon: "success",
           title: "Saved!",
@@ -107,8 +80,101 @@ const CustomEditor = () => {
     }
   };
 
+  const handleShare = async () => {
+    if (!documentId) {
+      Swal.fire({
+        icon: "error",
+        title: "No Document ID",
+        text: "Please save the document first.",
+      });
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.post(
+        `${API_URL}/api/documents/document/${documentId}/share`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      setLink(response.data.link);
+      setModalIsOpen(true);
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Failed to share the document.",
+      });
+    }
+  };
+
+  const handleSelection = () => {
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+      setSelection({
+        start: range.startOffset,
+        end: range.endOffset,
+      });
+    }
+  };
+
+  const handleAddComment = () => {
+    if (selection.start === selection.end) {
+      Swal.fire({
+        icon: "error",
+        title: "No Selection",
+        text: "Please select some text to comment on.",
+      });
+      return;
+    }
+    setCommentModalIsOpen(true);
+  };
+
+  const handleSaveComment = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      await axios.post(
+        `${API_URL}/api/comments/comment`,
+        {
+          documentId,
+          content: comment,
+          selection,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      setComment("");
+      setSelection({ start: 0, end: 0 });
+      setCommentModalIsOpen(false);
+      Swal.fire({
+        icon: "success",
+        title: "Comment Added!",
+        text: "Your comment has been added successfully.",
+      });
+    } catch (error) {
+      console.error("Error adding comment:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Failed to add the comment.",
+      });
+    }
+  };
+
   const closeModal = () => {
     setModalIsOpen(false);
+  };
+
+  const closeCommentModal = () => {
+    setCommentModalIsOpen(false);
   };
 
   const copyLinkToClipboard = () => {
@@ -168,15 +234,15 @@ const CustomEditor = () => {
               />
             </div>
           </div>
-          <div className='w-full h-1/3 flex justify-between p-4'>
+          <div className='w-full h-[37%] flex justify-between p-4'>
             <div className='flex gap-2'>
-              <span className='p-2 rounded bg-gray-300 hover:bg-gray-400 transition duration-150 cursor-pointer'>
+              <span className='p-3 rounded bg-gray-300 hover:bg-gray-400 transition duration-150 cursor-pointer'>
                 <FaBold />
               </span>
-              <span className='p-2 rounded bg-gray-300 hover:bg-gray-400 transition duration-150 cursor-pointer'>
+              <span className='p-3 rounded bg-gray-300 hover:bg-gray-400 transition duration-150 cursor-pointer'>
                 <GoItalic />
               </span>
-              <span className='p-2 rounded bg-gray-300 hover:bg-gray-400 transition duration-150 cursor-pointer'>
+              <span className='p-3 rounded bg-gray-300 hover:bg-gray-400 transition duration-150 cursor-pointer'>
                 <MdFormatUnderlined />
               </span>
               <select className='px-3 py-1 rounded border-2 border-slate-300 bg-transparent'>
@@ -200,7 +266,11 @@ const CustomEditor = () => {
               >
                 Share
               </button>
-              <button className='px-4 py-2 rounded border-2 border-blue-600 text-blue-600 font-semibold hover:bg-blue-100 transition duration-150'>
+              <button
+                onClick={handleAddComment}
+                className='px-4 py-2 rounded border-2 border-blue-600 text-blue-600 font-semibold hover:bg-blue-100 transition duration-
+150'
+              >
                 Comments
               </button>
               <button className='px-4 py-2 rounded border-2 border-gray-300 text-gray-700 font-semibold hover:bg-gray-100 transition duration-150'>
@@ -216,6 +286,7 @@ const CustomEditor = () => {
               placeholder='One word leads to another, write that first word here....'
               value={content}
               onChange={(e) => setContent(e.target.value)}
+              onMouseUp={handleSelection} // Capture selection on mouse release
             ></textarea>
           </div>
         </div>
@@ -245,6 +316,37 @@ const CustomEditor = () => {
           </button>
           <button
             onClick={closeModal}
+            className='px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700'
+          >
+            Close
+          </button>
+        </div>
+      </Modal>
+
+      {/* Modal for adding comments */}
+      <Modal
+        isOpen={commentModalIsOpen}
+        onRequestClose={closeCommentModal}
+        contentLabel='Add Comment'
+        className='w-[400px] mx-auto my-20 p-4 bg-white rounded shadow-lg'
+        overlayClassName='fixed inset-0 bg-black bg-opacity-50'
+      >
+        <h2 className='text-lg font-semibold mb-4'>Add Comment</h2>
+        <textarea
+          className='w-full p-2 border-2 border-gray-300 rounded mb-4'
+          placeholder='Write your comment here...'
+          value={comment}
+          onChange={(e) => setComment(e.target.value)}
+        />
+        <div className='flex justify-end gap-2'>
+          <button
+            onClick={handleSaveComment}
+            className='px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700'
+          >
+            Save Comment
+          </button>
+          <button
+            onClick={closeCommentModal}
             className='px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700'
           >
             Close
