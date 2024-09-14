@@ -10,16 +10,11 @@ import { API_URL } from "./config/config";
 
 Modal.setAppElement("#root");
 
-const generateRandomId = () => {
-  const min = 1;
-  const max = 1000;
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-};
-
 const CustomEditor = () => {
   const navigate = useNavigate();
+  const [comments, setComments] = useState<any[]>([]);
   const [link, setLink] = useState("");
-  const [documentId, setDocumentId] = useState(generateRandomId().toString());
+  const [documentId, setDocumentId] = useState();
   const [content, setContent] = useState("");
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [commentModalIsOpen, setCommentModalIsOpen] = useState(false);
@@ -28,6 +23,7 @@ const CustomEditor = () => {
   const [selectionStart, setSelectionStart] = useState<number | null>(null);
   const [selectionEnd, setSelectionEnd] = useState<number | null>(null);
   const [saved, setSaved] = useState(false);
+  const [showComments, setShowComments] = useState(false);
 
   const handleHomeClick = () => {
     Swal.fire({
@@ -39,7 +35,6 @@ const CustomEditor = () => {
       cancelButtonText: "No, stay here",
     }).then((result) => {
       if (result.isConfirmed) {
-        setDocumentId("");
         navigate("/");
       }
     });
@@ -47,11 +42,9 @@ const CustomEditor = () => {
 
   const handleSave = async () => {
     try {
-      const id = documentId;
       const response = await axios.post(
         `${API_URL}/api/documents/document`,
         {
-          id,
           content,
         },
         {
@@ -60,6 +53,7 @@ const CustomEditor = () => {
           },
         }
       );
+      setDocumentId(response.data._id);
       if (response.status === 199) {
         Swal.fire({
           icon: "warning",
@@ -129,18 +123,30 @@ const CustomEditor = () => {
     }
     setCommentModalIsOpen(true);
   };
-
+  const fetchComments = async () => {
+    console.log("in comments");
+    try {
+      const response = await axios.get(
+        `${API_URL}/api/comments/${documentId}/comments`
+      );
+      setComments(response.data);
+      setShowComments(true);
+      console.log(comments);
+    } catch (error) {
+      console.log(error);
+    }
+  };
   const handleSaveComment = async () => {
     try {
       const token = localStorage.getItem("token");
       await axios.post(
-        `${API_URL}/api/comments/comment`,
+        `${API_URL}/api/comments/${documentId}/comment`,
         {
-          documentId,
           content: comment,
-          selection,
-          start: selectionStart,
-          end: selectionEnd,
+          selection: {
+            start: selectionStart,
+            end: selectionEnd,
+          },
         },
         {
           headers: {
@@ -198,7 +204,13 @@ const CustomEditor = () => {
 
   return (
     <>
-      <div className='w-full min-h-screen flex flex-col'>
+      <div className='w-full min-h-screen flex flex-col relative'>
+        <button
+          onClick={fetchComments}
+          className='px-3 py-2 bg-blue-300  h-12 absolute top-56 right-4 rounded'
+        >
+          comments
+        </button>
         <div className='w-full h-[30vh] bg-gray-200'>
           <div className='w-full h-1/2 flex justify-between items-center'>
             <div className='flex justify-center items-center gap-2'>
@@ -222,7 +234,7 @@ const CustomEditor = () => {
                 </svg>
               </span>
               <span className='text-center text-lg font-semibold'>
-                Document {documentId || "1"}
+                Document
               </span>
             </div>
             <div className='w-[70%]'>
@@ -283,6 +295,32 @@ const CustomEditor = () => {
           placeholder='Start typing your document here...'
         ></textarea>
       </div>
+      {showComments && (
+        <div className='fixed inset-0 bg-gray-800 bg-opacity-70 flex flex-col justify-center items-center z-50'>
+          <button
+            onClick={() => setShowComments(false)}
+            className='absolute top-4 right-4 bg-red-500 text-white p-2 rounded'
+          >
+            Close
+          </button>
+          <div className='w-full max-w-4xl bg-white p-6 rounded-lg shadow-lg'>
+            {comments.map((comment) => (
+              <div
+                key={comment.id}
+                className='w-full h-20 bg-gray-200 p-4 mb-4 rounded'
+              >
+                <div className='flex justify-center items-center'>
+                  <div>
+                    <p className='text-lg font-semibold'>{comment.author}</p>
+                    <p className='text-lg'>{comment.content}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <Modal
         isOpen={modalIsOpen}
         onRequestClose={closeModal}
