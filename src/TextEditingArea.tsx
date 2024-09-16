@@ -4,6 +4,7 @@ import { GoItalic } from "react-icons/go";
 import { MdFormatUnderlined } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { toast, Toaster } from "react-hot-toast";
 import Swal from "sweetalert2";
 import Modal from "react-modal";
 import { API_URL } from "./config/config";
@@ -55,36 +56,20 @@ const CustomEditor = () => {
       );
       setDocumentId(response.data._id);
       if (response.status === 199) {
-        Swal.fire({
-          icon: "warning",
-          title: "Oops...",
-          text: "Document already saved",
-        });
+        toast.error("error saving the document");
       } else {
         setSaved(true);
-        Swal.fire({
-          icon: "success",
-          title: "Saved!",
-          text: "Document saved successfully.",
-        });
+        toast.success("Document saved successfully.");
       }
     } catch (error) {
       console.error("Error saving document:", error);
-      Swal.fire({
-        icon: "error",
-        title: "Oops...",
-        text: "Failed to save the document.",
-      });
+      toast.error("error saving the document");
     }
   };
 
   const handleShare = async () => {
     if (!documentId) {
-      Swal.fire({
-        icon: "error",
-        title: "No Document ID",
-        text: "Please save the document first.",
-      });
+      toast.error("Please save the document before sharing.");
       return;
     }
 
@@ -102,11 +87,7 @@ const CustomEditor = () => {
       setModalIsOpen(true);
     } catch (error: any) {
       console.log("Error : ", error.response);
-      Swal.fire({
-        icon: "error",
-        title: "Oops...",
-        text: "Failed to share the document.",
-      });
+      toast.error("error sharing the document");
     }
   };
 
@@ -114,11 +95,7 @@ const CustomEditor = () => {
     const selection = window.getSelection();
 
     if (!selection) {
-      Swal.fire({
-        icon: "error",
-        title: "No Selection",
-        text: "Please select some text to comment on.",
-      });
+      toast.error("Please select some text to add a comment.");
       return;
     }
     setCommentModalIsOpen(true);
@@ -159,18 +136,10 @@ const CustomEditor = () => {
       setSelectionStart(null);
       setSelectionEnd(null);
       setCommentModalIsOpen(false);
-      Swal.fire({
-        icon: "success",
-        title: "Comment Added!",
-        text: "Your comment has been added successfully.",
-      });
+      toast.success("Comment added successfully.");
     } catch (error) {
       console.error("Error adding comment:", error);
-      Swal.fire({
-        icon: "error",
-        title: "Oops...",
-        text: "Failed to add the comment.",
-      });
+      toast.error("error adding the comment");
     }
   };
 
@@ -186,19 +155,11 @@ const CustomEditor = () => {
     navigator.clipboard
       .writeText(link)
       .then(() => {
-        Swal.fire({
-          icon: "success",
-          title: "Link Copied!",
-          text: "The shareable link has been copied to your clipboard.",
-        });
+        toast.success("Link copied to clipboard.");
       })
       .catch((err) => {
         console.error("Failed to copy link:", err);
-        Swal.fire({
-          icon: "error",
-          title: "Copy Failed",
-          text: "Failed to copy the link to your clipboard.",
-        });
+        toast.error("Failed to copy link.");
       });
   };
 
@@ -294,6 +255,7 @@ const CustomEditor = () => {
           onChange={(e) => setContent(e.target.value)}
           placeholder='Start typing your document here...'
         ></textarea>
+        <Toaster />
       </div>
       {showComments && (
         <div className='fixed inset-0 bg-gray-800 bg-opacity-70 flex flex-col justify-center items-center z-50'>

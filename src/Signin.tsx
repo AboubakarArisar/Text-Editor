@@ -3,8 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { API_URL } from "./config/config";
 import axios from "axios";
 import { FormEvent } from "react";
-import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast, Toaster } from "react-hot-toast";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -15,8 +14,7 @@ const Login = () => {
     e.preventDefault();
 
     if (!email || !password) {
-      toast.error("please fill in all fields!");
-
+      toast.error("Please fill in all fields!");
       return;
     }
 
@@ -32,12 +30,13 @@ const Login = () => {
 
       navigate("/editor");
     } catch (error) {
-      toast.error("login failed!");
+      toast.error("Login failed!");
     }
   };
 
   return (
     <div className='flex justify-center items-center h-screen bg-gray-300'>
+      <Toaster />
       <div className='container mx-auto p-4 w-4/5 md:w-2/5 xl:w-1/3 2xl:w-1/4 bg-white rounded-lg shadow-lg'>
         <h2 className='text-2xl font-bold mb-4 text-center'>Login</h2>
         <form onSubmit={handleLogin}>
